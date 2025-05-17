@@ -9,6 +9,7 @@ export default function HomePage() {
         <li><a href="/api/hello">API: Hello</a></li>
         <li><a href="/api/items">API: Items</a></li>
         <li><a href="/api/users/123">API: User 123</a></li>
+        <li><a href="/api/users/123/posts">API: User 123 Posts</a></li>
       </ul>
     </div>
   );

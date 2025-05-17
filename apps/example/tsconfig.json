@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "module": "ESNext",
     "target": "ESNext",
     "moduleResolution": "bundler",
@@ -9,14 +9,14 @@
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@framework/*": ["../core/framework/src/*"],
+      "@zephra/framework": ["../core/framework/src"],
+      "@zephra/framework/*": ["../core/framework/src/*"],
       "@/*": ["./app/*"]
     },
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["bun-types"]
   },
   "include": [
     "index.ts",

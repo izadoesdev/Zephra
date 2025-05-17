@@ -1,7 +1,5 @@
 import { createApp } from '@zephra/framework';
 import { logger } from '@zephra/framework';
-import React from 'react';
-import { renderToString } from 'react-dom/server';
 
 // Set up configuration for the example app
 const PORT = process.env.PORT || 3000;
@@ -15,9 +13,7 @@ async function startApp() {
       // Use relative paths from the current file
       appDir: import.meta.dir,
       apiDir: 'app/api',
-      pagesDir: 'app', // Look for page.tsx files in the app directory
-      React: React,
-      renderToString: renderToString
+      pagesDir: 'app',
     });
 
     // Start the server

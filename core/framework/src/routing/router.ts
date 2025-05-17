@@ -82,7 +82,7 @@ export class Router {
       else {
         let methodsRegistered = 0;
         
-        for (const method of ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const) {
+        for (const method of ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'] as const) {
           if (method in routeModule) {
             this.app.route(method, route.path, routeModule[method] as Handler);
             methodsRegistered++;

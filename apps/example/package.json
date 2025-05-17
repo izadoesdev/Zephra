@@ -4,13 +4,13 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch index.ts",
+    "dev": "bun --watch --hot index.ts",
     "start": "bun index.ts"
   },
   "dependencies": {
     "elysia": "^1.0.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/react": "19.1.0",

@@ -5,7 +5,6 @@ import { createRouter } from './routing/router';
 import type { RouteScannerConfig, DiscoveredRoute } from './types/routing';
 import { DEFAULT_CONFIG } from './config/app';
 import type {
-  ReactExternals,
   ActualLoggerInstance,
   ActualRouterInstance,
   ZephraAppInstance
@@ -13,8 +12,7 @@ import type {
 import { handleReactPageRoute } from './ssr/page-renderer';
 import { htmlErrorString } from './utils/html-response';
 
-export async function createApp(  // Ensure this export exists
-  reactExternals: ReactExternals,
+export async function createApp(
   config: Partial<RouteScannerConfig> = {}
 ): Promise<ZephraAppInstance> {
   const mergedConfig: RouteScannerConfig = {
@@ -68,7 +66,6 @@ export async function createApp(  // Ensure this export exists
             ctx,
             pageRoute,
             mergedConfig,
-            reactExternals,
             appLogger
           );
         }
@@ -102,7 +99,9 @@ export async function createApp(  // Ensure this export exists
     appLogger.info(
       'Zephra app initialized successfully with React SSR enabled.'
     );
-    return finalApp;
+
+    // @ts-ignore - Elysia type inference is not working correctly here. // TODO: Fix this.
+    return finalApp as unknown as ZephraAppInstance;
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
     appLogger.error(`Error initializing Zephra app: ${error.message}`);

@@ -1,13 +1,21 @@
 {
   "name": "@zephra/framework",
-  "module": "src/index.ts",
+  "version": "0.1.0",
   "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "build": "bun tsc -p .",
+    "dev": "bun run --watch src/index.ts",
+    "lint": "bunx @biomejs/biome lint ./src",
+    "format": "bunx @biomejs/biome format --write ./src",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.7.3",
     "@types/bun": "latest",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {

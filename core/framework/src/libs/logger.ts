@@ -13,7 +13,9 @@ const createLogger = (prefix = 'zephra') => {
     },
     level: process.env.ZEPHRA_DEBUG === 'true' || Bun.env.ZEPHRA_DEBUG === 'true' ? 'debug' : 'info',
   });
-};const logger = createLogger();
+};
+
+const logger = createLogger();
 
 export { logger, createLogger };
 
