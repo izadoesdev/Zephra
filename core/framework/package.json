@@ -1,0 +1,21 @@
+{
+  "name": "@zephra/framework",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@elysiajs/html": "^1.0.2",
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.0",
+    "elysia": "latest",
+    "react": "^19.1.0",
+    "react-dom": "19.1.0"
+  }
+}
