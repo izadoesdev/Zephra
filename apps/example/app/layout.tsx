@@ -1,6 +1,4 @@
 import type React from 'react';
-import './styles/main.css';
-
 /**
  * Root layout component that wraps all pages
  */ 
