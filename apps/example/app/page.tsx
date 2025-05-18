@@ -6,11 +6,11 @@ export default function HomePage() {
         <h1 className="text-5xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-lg tracking-tight">Welcome to Zephra</h1>
         <p className="mb-8 text-lg text-gray-200 font-medium">The ultra-fast, minimalist full-stack framework</p>
         <ul className="space-y-3">
-          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/about">About</a></li>
-          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/hello">API: Hello</a></li>
-          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/items">API: Items</a></li>
-          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/users/123">API: User 123</a></li>
-          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/users/123/posts">API: User 123 Posts</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/about">About</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/hello">API: Hello</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/items">API: Items</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/users/123">API: User 123</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/users/123/posts">API: User 123 Posts</a></li>
         </ul>
       </div>
     </div>

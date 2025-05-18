@@ -5,78 +5,31 @@ import React from 'react';
  */
 export default function TechnologyPage() {
   return (
-    <div>
-      <h1>Our Technology Stack</h1>
-      <p>Zephra is built on modern, cutting-edge technologies to deliver exceptional performance and developer experience.</p>
-      
-      <div className="tech-section">
-        <h2>Core Technologies</h2>
-        <div className="tech-grid">
+    <div className="max-w-4xl mx-auto mt-10">
+      <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">Our Technology Stack</h1>
+      <p className="mb-8 text-lg text-gray-200">Zephra is built on modern, cutting-edge technologies to deliver exceptional performance and developer experience.</p>
+      <div className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4 text-blue-300">Core Technologies</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6">
           {CORE_TECHNOLOGIES.map(tech => (
-            <div key={tech.name} className="tech-card">
-              <h3>{tech.name}</h3>
-              <div className="tech-description">{tech.description}</div>
+            <div key={tech.name} className="bg-white/10 rounded-xl shadow-lg p-6 border-t-4 border-blue-400">
+              <h3 className="text-xl font-semibold mb-2 text-blue-200">{tech.name}</h3>
+              <div className="text-gray-200">{tech.description}</div>
             </div>
           ))}
         </div>
       </div>
-      
-      <div className="tech-section">
-        <h2>Framework Features</h2>
-        <ul className="feature-list">
+      <div>
+        <h2 className="text-2xl font-semibold mb-4 text-pink-300">Framework Features</h2>
+        <ul className="space-y-4">
           {FRAMEWORK_FEATURES.map(feature => (
-            <li key={feature.title} className="feature-item">
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
+            <li key={feature.title} className="bg-white/10 rounded-xl shadow p-5 border border-white/20">
+              <h3 className="text-lg font-semibold mb-1 text-pink-200">{feature.title}</h3>
+              <p className="text-gray-200">{feature.description}</p>
             </li>
           ))}
         </ul>
       </div>
-      
-      <style>{`
-        .tech-section {
-          margin-bottom: 3rem;
-        }
-        
-        .tech-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-top: 1.5rem;
-        }
-        
-        .tech-card {
-          background-color: white;
-          border-radius: 0.5rem;
-          padding: 1.5rem;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-          border-top: 4px solid #3b82f6;
-        }
-        
-        .tech-card h3 {
-          margin-top: 0;
-          color: #3b82f6;
-        }
-        
-        .feature-list {
-          list-style: none;
-          padding: 0;
-        }
-        
-        .feature-item {
-          background-color: white;
-          border-radius: 0.5rem;
-          padding: 1.5rem;
-          margin-bottom: 1rem;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .feature-item h3 {
-          margin-top: 0;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 0.5rem;
-        }
-      `}</style>
     </div>
   );
 }
