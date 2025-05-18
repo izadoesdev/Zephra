@@ -16,6 +16,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorPage from './pages/ErrorPage';
+import serverTiming from '@elysiajs/server-timing';
 if (process.env.NODE_ENV !== 'production') {
   startHMRServer({ watchDir: process.cwd() });
 }
@@ -41,6 +42,7 @@ export async function createApp(
   );
  
   baseApp.use(elysiaHtmlPlugin());
+  baseApp.use(serverTiming());
   baseApp.use(staticPlugin({ prefix: '/public' }));
 
   baseApp.get('/health', () => ({ status: 'ok', name: mergedConfig.appName }));

@@ -20,7 +20,7 @@ function injectCssIntoHtml(html: string, cssPath: string): string {
     return html.replace('</head>', `<style id=\"tailwind\">${css}</style></head>`);
   }
   // Fallback: prepend to html
-  return `<style id=\"tailwind\">${css}</style>` + html;
+  return `<style id=\"tailwind\">${css}</style>${html}`;
 }
 
 export async function handleReactPageRoute(

@@ -2,6 +2,7 @@ import type { Elysia, Handler } from 'elysia';
 import { scanRoutes } from './scanner';
 import type { ApiRouteModule, DiscoveredRoute, RouteScannerConfig } from '../types/routing';
 import { logger, writeDiagnostics } from '../libs/logger';
+import { sqliteManager } from '../libs/sqliteManager';
 
 /**
  * The Router is responsible for scanning routes and registering them with the Elysia app.
@@ -70,6 +71,11 @@ export class Router {
       }
 
       const apiPrefixedPath = this.getApiPrefixedPath(route.path);
+      const registrationStart = performance.now();
+      let registrationType = 'unknown';
+      let label = apiPrefixedPath;
+      let method: string | undefined = undefined;
+      let meta: Record<string, unknown> = { filePath: route.filePath };
 
       if (
         routeModule.default &&
@@ -84,18 +90,64 @@ export class Router {
         const dynamicIndex = apiPrefixedPath.indexOf('/:');
         const mountPath = dynamicIndex !== -1 ? apiPrefixedPath.substring(0, dynamicIndex) : apiPrefixedPath;
         this.app.mount(mountPath, routeModule.default as Elysia);
+        registrationType = 'plugin-mount';
+        label = mountPath;
+        meta = { ...meta, mountPath };
+        const duration = performance.now() - registrationStart;
+        sqliteManager.insertPerformanceDiagnostic({
+          timestamp: new Date().toISOString(),
+          type: 'api-route-registration',
+          label,
+          duration_ms: duration,
+          meta: { ...meta, registrationType }
+        });
         return;
       }
       // Legacy: If a specific HTTP method is defined in the route data, use that handler
       if (route.method && routeModule[route.method]) {
         this.app.route(route.method, apiPrefixedPath, routeModule[route.method] as Handler);
+        registrationType = 'method-handler';
+        method = route.method;
+        label = `${apiPrefixedPath} [${method}]`;
+        meta = { ...meta, method };
+        const duration = performance.now() - registrationStart;
+        sqliteManager.insertPerformanceDiagnostic({
+          timestamp: new Date().toISOString(),
+          type: 'api-route-registration',
+          label,
+          duration_ms: duration,
+          meta: { ...meta, registrationType }
+        });
       } else if (routeModule.default) {
         this.app.get(apiPrefixedPath, routeModule.default);
+        registrationType = 'default-get-handler';
+        method = 'GET';
+        label = `${apiPrefixedPath} [GET]`;
+        meta = { ...meta, method };
+        const duration = performance.now() - registrationStart;
+        sqliteManager.insertPerformanceDiagnostic({
+          timestamp: new Date().toISOString(),
+          type: 'api-route-registration',
+          label,
+          duration_ms: duration,
+          meta: { ...meta, registrationType }
+        });
       } else {
         let methodsRegistered = 0;
         for (const method of ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'] as const) {
           if (method in routeModule) {
             this.app.route(method, apiPrefixedPath, routeModule[method] as Handler);
+            registrationType = 'multi-method-handler';
+            label = `${apiPrefixedPath} [${method}]`;
+            meta = { ...meta, method };
+            const duration = performance.now() - registrationStart;
+            sqliteManager.insertPerformanceDiagnostic({
+              timestamp: new Date().toISOString(),
+              type: 'api-route-registration',
+              label,
+              duration_ms: duration,
+              meta: { ...meta, registrationType }
+            });
             methodsRegistered++;
           }
         }
