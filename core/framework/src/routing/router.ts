@@ -80,7 +80,10 @@ export class Router {
         if (route.path !== '/' && route.path !== '') {
           logger.warn(`Route ${route.filePath} uses 'app.use' with path '${route.path}'. Prefixing with '/api' might not be intended here. Manual review advised if it's not a global middleware or self-contained plugin.`);
         }
-        this.app.mount(apiPrefixedPath, routeModule.default as Elysia);
+        // Mount at parent path if dynamic segment exists
+        const dynamicIndex = apiPrefixedPath.indexOf('/:');
+        const mountPath = dynamicIndex !== -1 ? apiPrefixedPath.substring(0, dynamicIndex) : apiPrefixedPath;
+        this.app.mount(mountPath, routeModule.default as Elysia);
         return;
       }
       // Legacy: If a specific HTTP method is defined in the route data, use that handler

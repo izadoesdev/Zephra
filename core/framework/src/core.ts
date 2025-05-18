@@ -64,6 +64,14 @@ export async function createApp(
 
         logger.info(`[ROUTE] Incoming request: path='${requestPath}', normalized='${normalizedPath}'`);
 
+        // If it's an API route, return JSON 404
+        if (normalizedPath.startsWith('/api')) {
+          ctx.set.status = 404;
+          return new Response(JSON.stringify({ error: 'Not found', path: normalizedPath }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
         const pageRoute = pageRoutes.find(
           (r) => r.path === normalizedPath && r.type === 'page'
         );
