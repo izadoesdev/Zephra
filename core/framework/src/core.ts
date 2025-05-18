@@ -41,7 +41,7 @@ export async function createApp(
   );
  
   baseApp.use(elysiaHtmlPlugin());
-  // baseApp.use(staticPlugin({ assets: '.zephra', prefix: '/' }));
+  baseApp.use(staticPlugin({ prefix: '/public' }));
 
   baseApp.get('/health', () => ({ status: 'ok', name: mergedConfig.appName }));
 

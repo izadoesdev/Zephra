@@ -1,9 +1,10 @@
 /**
  * Example dynamic API endpoint to demonstrate parameter extraction
  */
-export default (context) => {
-  const userId = context.params.id;
-  
+import { Elysia } from 'elysia';
+
+export default new Elysia().get('/', ({ params }: { params: { id: string } }) => {
+  const userId = params.id;
   return {
     message: `User details for ID: ${userId}`,
     timestamp: new Date().toISOString(),
@@ -13,4 +14,4 @@ export default (context) => {
       createdAt: new Date().toISOString()
     }
   };
-}; 
+}); 

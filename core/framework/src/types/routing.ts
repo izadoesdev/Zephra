@@ -1,4 +1,5 @@
 import type { Handler, Context as ElysiaContext } from 'elysia';
+import type ElysiaClass from 'elysia';
 
 /**
  * Represents the HTTP methods Zephra will support for file-based routing.
@@ -46,14 +47,16 @@ export interface RouteScannerConfig {
   appName?: string;
 }
 
+export type ElysiaInstance = InstanceType<typeof ElysiaClass>;
+
 /**
  * Type for a module exporting Elysia route handlers.
  * Example: export const GET = (context: ElysiaContext) => { ... }
  * A module can export multiple handlers for different HTTP methods.
  */
 export type ApiRouteModule = Partial<Record<HttpMethod, Handler>> & {
-  /** A default export can also serve as a handler, typically for GET or if no other method-specific export is found. */
-  default?: Handler;
+  /** A default export can be a handler, an Elysia instance, or undefined. */
+  default?: Handler | ElysiaInstance;
 };
 
 /**

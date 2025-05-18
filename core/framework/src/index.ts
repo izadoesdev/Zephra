@@ -16,4 +16,4 @@ export type {
   ZephraAppInstance,
   Logger,
   Router
-} from './types/app'; 
+} from './types/app';

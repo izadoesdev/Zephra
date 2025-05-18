@@ -63,40 +63,45 @@ export class Router {
    */
   private async registerApiRoute(route: DiscoveredRoute): Promise<void> {
     try {
-      // Dynamically import the route handler module
       const routeModule = await import(route.filePath) as ApiRouteModule;
-      
       if (!routeModule) {
         logger.error(`Failed to import API route module: ${route.filePath}`);
         return;
       }
-      
-      // If a specific HTTP method is defined in the route data, use that handler
-      if (route.method && routeModule[route.method]) {
-        this.app.route(route.method, route.path, routeModule[route.method] as Handler);
-      } 
-      // If no method is specified or found, check if there's a default export
-      else if (routeModule.default) {
-        // Default export can be used for a GET handler or a handler that handles all methods
-        this.app.get(route.path, routeModule.default);
+
+      const apiPrefixedPath = this.getApiPrefixedPath(route.path);
+
+      if (
+        routeModule.default &&
+        typeof routeModule.default === 'object' &&
+        typeof routeModule.default.use === 'function' &&
+        typeof routeModule.default.handle === 'function'
+      ) {
+        if (route.path !== '/' && route.path !== '') {
+          logger.warn(`Route ${route.filePath} uses 'app.use' with path '${route.path}'. Prefixing with '/api' might not be intended here. Manual review advised if it's not a global middleware or self-contained plugin.`);
+        }
+        this.app.mount(apiPrefixedPath, routeModule.default as Elysia);
+        return;
       }
-      // If there are method-specific exports, register them all
-      else {
+      // Legacy: If a specific HTTP method is defined in the route data, use that handler
+      if (route.method && routeModule[route.method]) {
+        this.app.route(route.method, apiPrefixedPath, routeModule[route.method] as Handler);
+      } else if (routeModule.default) {
+        this.app.get(apiPrefixedPath, routeModule.default);
+      } else {
         let methodsRegistered = 0;
-        
         for (const method of ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'] as const) {
           if (method in routeModule) {
-            this.app.route(method, route.path, routeModule[method] as Handler);
+            this.app.route(method, apiPrefixedPath, routeModule[method] as Handler);
             methodsRegistered++;
           }
         }
-        
         if (methodsRegistered === 0) {
-          logger.warn(`No handlers found in module for route: ${route.path}`);
+          logger.warn(`No handlers found in module for route: ${apiPrefixedPath}`);
         }
       }
     } catch (error) {
-      logger.error(`Error registering API route ${route.path}: ${error}`);
+      logger.error(`Error registering API route ${route.path}, ${error}`);
     }
   }
   
@@ -106,6 +111,14 @@ export class Router {
    */
   getPageRoutes(): DiscoveredRoute[] {
     return this.pageRoutes;
+  }
+
+  /**
+   * Ensures the route path is prefixed with /api exactly once.
+   */
+  private getApiPrefixedPath(path: string): string {
+    if (path === '/') return '/api';
+    return path.startsWith('/api') ? path : `/api${path}`;
   }
 }
 
