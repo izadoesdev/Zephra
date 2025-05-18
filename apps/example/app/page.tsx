@@ -7,10 +7,12 @@ export default function HomePage() {
         <p className="mb-8 text-lg text-gray-200 font-medium">The ultra-fast, minimalist full-stack framework</p>
         <ul className="space-y-3">
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/about">About</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/posts">Posts (SSR+CSR Demo)</a></li>
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/hello">API: Hello</a></li>
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/items">API: Items</a></li>
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/users/123">API: User 123</a></li>
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/users/123/posts">API: User 123 Posts</a></li>
+          <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/posts">API: Posts CRUD</a></li>
         </ul>
       </div>
     </div>
