@@ -4,16 +4,20 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch --hot index.ts",
+    "dev": "concurrently \"bun --hot index.ts\" \"bunx tailwindcss -i ./app/globals.css -o ./.zephra/tailwind.css --watch\"",
     "start": "bun index.ts"
   },
   "dependencies": {
+    "@tailwindcss/cli": "^4.1.7",
+    "@zephra/framework": "link:@zephra/framework",
     "elysia": "^1.0.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.7"
   },
   "devDependencies": {
     "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.0"
+    "@types/react-dom": "19.1.0",
+    "concurrently": "^8.2.2"
   }
 }

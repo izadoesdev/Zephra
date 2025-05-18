@@ -10,10 +10,12 @@ import type {
   ZephraAppInstance
 } from './types/app';
 import { handleReactPageRoute } from './ssr/page-renderer';
-import { htmlErrorString } from './utils/html-response';
 import { startHMRServer } from './hmr/hmr-server';
 import { staticPlugin } from '@elysiajs/static';
-
+import React from 'react';
+import { renderToString } from 'react-dom/server';
+import NotFoundPage from './pages/NotFoundPage';
+import ErrorPage from './pages/ErrorPage';
 if (process.env.NODE_ENV !== 'production') {
   startHMRServer({ watchDir: process.cwd() });
 }
@@ -37,9 +39,9 @@ export async function createApp(
     'logger',
     logger
   );
-
+ 
   baseApp.use(elysiaHtmlPlugin());
-  baseApp.use(staticPlugin({ assets: '.zephra', prefix: '/' }));
+  // baseApp.use(staticPlugin({ assets: '.zephra', prefix: '/' }));
 
   baseApp.get('/health', () => ({ status: 'ok', name: mergedConfig.appName }));
 
@@ -55,63 +57,57 @@ export async function createApp(
     const pageRoutes: DiscoveredRoute[] = router.getPageRoutes();
 
     if (pageRoutes.length > 0) {
-      logger.info(
-        `Found ${pageRoutes.length} page routes for server-side rendering.`
-      );
-
       baseApp.get('*', async (ctx: Context) => {
         const requestPath = new URL(ctx.request.url).pathname;
         const normalizedPath =
           requestPath === '/' ? '/' : requestPath.replace(/\/+$/, '');
+
+        logger.info(`[ROUTE] Incoming request: path='${requestPath}', normalized='${normalizedPath}'`);
 
         const pageRoute = pageRoutes.find(
           (r) => r.path === normalizedPath && r.type === 'page'
         );
 
         if (pageRoute) {
-          return handleReactPageRoute(
-            ctx,
-            pageRoute,
-            mergedConfig,
-            logger
-          );
+          logger.info(`[ROUTE] Matched page route: path='${pageRoute.path}', file='${pageRoute.filePath}'`);
+          try {
+            return await handleReactPageRoute(
+              ctx,
+              pageRoute,
+              mergedConfig,
+              logger
+            );
+          } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            logger.error(`[RENDER] Error rendering page route '${normalizedPath}': ${error.message}`);
+            if (error.stack) logger.error(error.stack);
+            ctx.set.status = 500;
+            const html = renderToString(React.createElement(ErrorPage, { error: error.message }));
+            return new Response(`<!DOCTYPE html>${html}`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+          }
         }
 
-        logger.debug(`No page route found for path: ${normalizedPath}`);
+        logger.error(`[ROUTE] No page route found for path: '${normalizedPath}'. Available routes: [${pageRoutes.map(r => r.path).join(', ')}]`);
         ctx.set.status = 404;
-        return new Response(
-          htmlErrorString(
-            'Not Found',
-            '404 - Page Not Found',
-            `The requested path ${normalizedPath} was not found.`
-          ),
-          { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-        );
+        const html = renderToString(React.createElement(NotFoundPage));
+        return new Response(`<!DOCTYPE html>${html}`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
       });
     } else {
       baseApp.get('*', (ctx: Context) => {
-        logger.warn('No page routes defined. Catch-all returning 404.');
+        logger.error('No page routes defined. Catch-all returning 404.');
         ctx.set.status = 404;
-        return new Response(
-          htmlErrorString(
-            'Not Found',
-            '404 - No Pages Defined',
-            'The application has not defined any page routes.'
-          ),
-          { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-        );
+        const html = renderToString(React.createElement(NotFoundPage));
+        return new Response(`<!DOCTYPE html>${html}`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
       });
     }
 
-    logger.info(
-      'Zephra app initialized successfully with React SSR enabled.'
-    );
+    logger.info('Zephra app initialized successfully with React SSR enabled.');
 
     // @ts-ignore - Elysia type inference is not working correctly here. // TODO: Fix this.
     return baseApp as unknown as ZephraAppInstance;
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
-    logger.error(`Error initializing Zephra app: ${error.message}`);
+    logger.error(`[INIT] Error initializing Zephra app: ${error.message}`);
     if (error.stack) logger.error(error.stack);
     throw error;
   }

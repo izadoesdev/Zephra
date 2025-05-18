@@ -1,23 +1,21 @@
 import { createApp } from '@zephra/framework';
 import { logger } from '@zephra/framework';
 
-// Set up configuration for the example app
 const PORT = process.env.PORT || 3000;
+
+let server: { stop?: () => Promise<void> | void } | undefined;
 
 async function startApp() {
   logger.info(`Starting Zephra web example on port ${PORT}...`);
 
   try {
-    // Create and initialize the app
     const app = await createApp({
-      // Use relative paths from the current file
       appDir: import.meta.dir,
       apiDir: 'app/api',
       pagesDir: 'app',
     });
 
-    // Start the server
-    Bun.serve({fetch: app.fetch, port: Number(PORT)});
+    server = app.listen(Number(PORT));
 
     logger.info(`🚀 Zephra web example is running at http://localhost:${PORT}`);
   } catch (err) {
@@ -25,5 +23,22 @@ async function startApp() {
     process.exit(1);
   }
 }
+
+async function shutdown() {
+  logger.info('Shutting down Zephra web example...');
+  try {
+    if (server && typeof server.stop === 'function') {
+      await server.stop();
+      logger.info('Server stopped gracefully.');
+    }
+  } catch (err) {
+    logger.error(`Error during shutdown: ${err}`);
+  } finally {
+    process.exit(0);
+  }
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 startApp(); 

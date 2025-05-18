@@ -1,7 +1,7 @@
 import type { Elysia, Handler } from 'elysia';
 import { scanRoutes } from './scanner';
 import type { ApiRouteModule, DiscoveredRoute, RouteScannerConfig } from '../types/routing';
-import { logger } from '../libs/logger';
+import { logger, writeDiagnostics } from '../libs/logger';
 
 /**
  * The Router is responsible for scanning routes and registering them with the Elysia app.
@@ -27,10 +27,14 @@ export class Router {
     const routes = await scanRoutes(this.config);
     
     // Separate routes by type
-    this.apiRoutes = routes.filter(route => route.type === 'api');
-    this.pageRoutes = routes.filter(route => route.type === 'page');
+    this.apiRoutes = routes.apiRoutes;
+    this.pageRoutes = routes.pageRoutes;
     
-    logger.info(`Discovered ${this.apiRoutes.length} API routes and ${this.pageRoutes.length} page routes`);
+    await writeDiagnostics({
+      timestamp: new Date().toISOString(),
+      apiRoutes: this.apiRoutes,
+      pageRoutes: this.pageRoutes
+    });
     
     return {
       apiRoutes: this.apiRoutes,
@@ -70,13 +74,11 @@ export class Router {
       // If a specific HTTP method is defined in the route data, use that handler
       if (route.method && routeModule[route.method]) {
         this.app.route(route.method, route.path, routeModule[route.method] as Handler);
-        logger.debug(`Registered ${route.method.toUpperCase()} handler for ${route.path}`);
       } 
       // If no method is specified or found, check if there's a default export
       else if (routeModule.default) {
         // Default export can be used for a GET handler or a handler that handles all methods
         this.app.get(route.path, routeModule.default);
-        logger.debug(`Registered default handler for ${route.path}`);
       }
       // If there are method-specific exports, register them all
       else {
@@ -86,7 +88,6 @@ export class Router {
           if (method in routeModule) {
             this.app.route(method, route.path, routeModule[method] as Handler);
             methodsRegistered++;
-            logger.debug(`Registered ${method.toUpperCase()} handler for ${route.path}`);
           }
         }
         

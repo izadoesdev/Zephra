@@ -10,6 +10,18 @@ import { htmlErrorString } from '../utils/html-response'; // Adjusted path
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { scriptManager, injectScripts } from '../libs/scriptManager';
+import { readFileSync, existsSync } from 'node:fs';
+
+function injectCssIntoHtml(html: string, cssPath: string): string {
+  if (!existsSync(cssPath)) return html;
+  const css = readFileSync(cssPath, 'utf8');
+  // Inject <style> just before </head>
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `<style id=\"tailwind\">${css}</style></head>`);
+  }
+  // Fallback: prepend to html
+  return `<style id=\"tailwind\">${css}</style>` + html;
+}
 
 export async function handleReactPageRoute(
   ctx: Context,
@@ -45,6 +57,14 @@ export async function handleReactPageRoute(
       pageElement = React.createElement(PageComponent, pageProps);
     }
     let htmlOutput = renderToString(pageElement);
+    // Wrap in a basic HTML document if not already
+    if (!/^<!DOCTYPE html>/i.test(htmlOutput)) {
+      htmlOutput = `<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Zephra App</title></head><body>${htmlOutput}</body></html>`;
+    }
+    // Inject Tailwind CSS (dev only)
+    if (process.env.NODE_ENV !== 'production') {
+      htmlOutput = injectCssIntoHtml(htmlOutput, pathUtil.resolve(config.appDir, '.zephra/tailwind.css'));
+    }
     // Inject all scripts from scriptManager and any additional scripts
     htmlOutput = injectScripts(htmlOutput, [...scriptManager.getAll(), ...scripts]);
     return htmlOutput;

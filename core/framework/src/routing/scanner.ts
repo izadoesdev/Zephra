@@ -34,64 +34,73 @@ interface PageRouteWithLayout extends DiscoveredRoute {
   layout?: string;
 }
 
-export async function scanRoutes(config: RouteScannerConfig): Promise<DiscoveredRoute[]> {
+interface FileTreeNode {
+  [key: string]: FileTreeNode | string;
+}
+
+function buildFileTree(dir: string, baseDir: string): FileTreeNode {
+  const fs = require('node:fs');
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const tree: FileTreeNode = {};
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    const relPath = path.relative(baseDir, fullPath);
+    if (entry.isDirectory()) {
+      tree[entry.name] = buildFileTree(fullPath, baseDir);
+    } else {
+      tree[entry.name] = relPath;
+    }
+  }
+  return tree;
+}
+
+interface ScanDiagnostics {
+  apiRoutes: DiscoveredRoute[];
+  pageRoutes: DiscoveredRoute[];
+  layouts: { [dir: string]: string };
+  duplicateApiWarnings: string[];
+  duplicatePageWarnings: string[];
+  errors: string[];
+  fileTree: {
+    apiDir: FileTreeNode;
+    pagesDir: FileTreeNode;
+  };
+}
+
+export async function scanRoutes(config: RouteScannerConfig): Promise<ScanDiagnostics> {
   const discoveredRoutes: DiscoveredRoute[] = [];
   const { appDir, apiDir: relativeApiDir, pagesDir: relativePagesDir } = config;
+  const errors: string[] = [];
+  const duplicateApiWarnings: string[] = [];
+  const duplicatePageWarnings: string[] = [];
+  const layouts: { [dir: string]: string } = {};
 
   const absoluteAppDir = path.resolve(appDir);
   const absoluteApiDir = normalizePath(path.join(absoluteAppDir, relativeApiDir));
-
-  logger.info(`Scanning for routes in app directory: ${absoluteAppDir}`);
-  logger.debug(`API base directory: ${absoluteApiDir}`);
+  const absolutePagesDir = relativePagesDir ? normalizePath(path.join(absoluteAppDir, relativePagesDir)) : '';
 
   // --- Scan for API Routes (enforce route.ts pattern) ---
   const apiGlobPattern = normalizePath(path.join(absoluteApiDir, `**/route{${VALID_API_EXTENSIONS.join(',')}}`));
-  logger.debug(`API glob pattern: ${apiGlobPattern}`);
-
   const apiGlob = new Glob(apiGlobPattern);
-  
-  // Track directories that already have a route to avoid duplicates
   const apiRouteDirectories = new Set<string>();
-  const duplicateApiWarnings = new Set<string>();
-  
   for await (const absoluteFilePath of apiGlob.scan({ absolute: true, dot: true, cwd: absoluteAppDir })) {
     const normalizedFilePath = normalizePath(absoluteFilePath);
     const fileDirPath = path.dirname(normalizedFilePath);
-    
-    // Check if we already found a route in this directory
     if (apiRouteDirectories.has(fileDirPath)) {
-      if (!duplicateApiWarnings.has(fileDirPath)) {
-        logger.warn(`Multiple route files found in ${fileDirPath}. Only the first one will be used.`);
-        duplicateApiWarnings.add(fileDirPath);
-      }
+      duplicateApiWarnings.push(fileDirPath);
       continue;
     }
-    
-    // Mark this directory as having a route
     apiRouteDirectories.add(fileDirPath);
-    
-    // Get the relative path from the API base directory
     const relativeFileDirPath = normalizePath(fileDirPath).replace(absoluteApiDir, '');
-
     const fileName = path.basename(normalizedFilePath);
     const ext = path.extname(fileName);
     const baseNameWithoutExt = fileName.substring(0, fileName.length - ext.length);
-
     const httpMethod: HttpMethod | undefined = undefined;
-    
-    // Extract HTTP method from the source code if possible (not from filename)
-    // For now, we'll only use the route.ts convention without method extraction from filename
-    
-    // Build the route path based on the directory structure
     const segments = relativeFileDirPath.split('/').filter(Boolean);
     const transformedSegments = segments.map(transformSegment);
-    
-    // Construct the final API route path
-    // Add trailing slash for root API
     const apiRoutePath = transformedSegments.length > 0 
       ? `/api/${transformedSegments.join('/')}` 
       : '/api/';
-    
     discoveredRoutes.push({
       filePath: normalizedFilePath,
       path: apiRoutePath,
@@ -101,81 +110,44 @@ export async function scanRoutes(config: RouteScannerConfig): Promise<Discovered
       depth: apiRoutePath.split('/').filter(Boolean).length,
       isDynamic: /[:*?]/.test(apiRoutePath),
     });
-    logger.debug(`Discovered API: ${httpMethod ? String(httpMethod).toUpperCase() : 'ALL'} ${apiRoutePath} -> ${normalizedFilePath}`);
   }
-  
   // --- Scan for Page Routes (enforce page.tsx pattern) ---
+  const pageDirectories = new Set<string>();
   if (relativePagesDir) {
-    const absolutePagesDir = normalizePath(path.join(absoluteAppDir, relativePagesDir));
-    logger.debug(`Pages base directory: ${absolutePagesDir}`);
-    
-    // For pages, we look specifically for files named exactly "page.tsx" or "page.jsx", etc.
     const pageGlobPattern = normalizePath(path.join(absoluteAppDir, "**/page{.tsx,.jsx,.ts,.js}"));
-    logger.debug(`Page glob pattern: ${pageGlobPattern}`);
-    
-    // Track directories that already have a page to avoid duplicates
-    const pageDirectories = new Set<string>();
-    const duplicatePageWarnings = new Set<string>();
-    
+    const duplicatePageWarningsSet = new Set<string>();
     const pageGlob = new Glob(pageGlobPattern);
     for await (const absoluteFilePath of pageGlob.scan({ absolute: true, dot: true, cwd: absoluteAppDir })) {
       const normalizedFilePath = normalizePath(absoluteFilePath);
-      
-      // Skip if file is in the API directory
       if (normalizedFilePath.startsWith(absoluteApiDir)) {
         continue;
       }
-      
       const fileDirPath = path.dirname(normalizedFilePath);
-      
-      // Check if we already found a page in this directory
       if (pageDirectories.has(fileDirPath)) {
-        if (!duplicatePageWarnings.has(fileDirPath)) {
-          logger.warn(`Multiple page files found in ${fileDirPath}. Only the first one will be used.`);
-          duplicatePageWarnings.add(fileDirPath);
+        if (!duplicatePageWarningsSet.has(fileDirPath)) {
+          duplicatePageWarnings.push(fileDirPath);
+          duplicatePageWarningsSet.add(fileDirPath);
         }
         continue;
       }
-      
-      // Mark this directory as having a page
       pageDirectories.add(fileDirPath);
-      
-      // Get the route path by analyzing the directory structure
-      // Extract the path from the directory structure, transforming [param] to :param
-      
-      // Parse the directory path relative to the pages directory to get the route path
       let relativePath = '';
-      
-      // Check if the file is in the pages directory or any subdirectory
       if (fileDirPath.startsWith(absolutePagesDir)) {
         relativePath = fileDirPath.substring(absolutePagesDir.length);
       } else {
-        // If it's in another directory, use the appDir as the base
         relativePath = fileDirPath.substring(absoluteAppDir.length);
-        
-        // Remove the relativePagesDir from the beginning if it exists
         if (relativePath.startsWith(`/${relativePagesDir}`)) {
           relativePath = relativePath.substring(relativePagesDir.length + 1);
         }
       }
-      
-      // Clean up the path
       if (relativePath.startsWith('/')) {
         relativePath = relativePath.substring(1);
       }
-      
-      // Split the path into segments and transform each segment to handle dynamic parts
       const segments = relativePath.split('/').filter(Boolean);
       const transformedSegments = segments.map(transformSegment);
-      
-      // Build the final path
       const routePath = transformedSegments.length > 0 
         ? `/${transformedSegments.join('/')}` 
         : '/';
-      
-      logger.debug(`Directory parsing: fileDirPath=${fileDirPath}, absolutePagesDir=${absolutePagesDir}, relativePath=${relativePath}, routePath=${routePath}`);
-      
-      // The file name (page.tsx) itself doesn't contribute to the path
       discoveredRoutes.push({
         filePath: normalizedFilePath,
         path: routePath,
@@ -184,74 +156,61 @@ export async function scanRoutes(config: RouteScannerConfig): Promise<Discovered
         depth: routePath.split('/').filter(Boolean).length,
         isDynamic: /[:*?]/.test(routePath),
       });
-      
-      logger.debug(`Discovered page: ${routePath} -> ${normalizedFilePath}`);
     }
   }
-  
   // --- Scan for Layout Files ---
   if (relativePagesDir) {
     const layoutGlobPattern = normalizePath(path.join(absoluteAppDir, `**/{layout,layout.}{${VALID_LAYOUT_EXTENSIONS.join(',')}}`));
-    logger.debug(`Layout glob pattern: ${layoutGlobPattern}`);
-    
-    // Map to store layouts by directory path
-    const layoutsByDir = new Map<string, string>();
-    
     const layoutGlob = new Glob(layoutGlobPattern);
     for await (const absoluteFilePath of layoutGlob.scan({ absolute: true, dot: true, cwd: absoluteAppDir })) {
       const normalizedFilePath = normalizePath(absoluteFilePath);
-      
-      // Skip if file is in the API directory
       if (normalizedFilePath.startsWith(absoluteApiDir)) {
         continue;
       }
-      
       const fileDirPath = path.dirname(normalizedFilePath);
-      
-      // Store the layout file path for this directory
-      layoutsByDir.set(fileDirPath, normalizedFilePath);
-      logger.debug(`Discovered layout in directory: ${fileDirPath} -> ${normalizedFilePath}`);
+      layouts[fileDirPath] = normalizedFilePath;
     }
-    
-    // Attach layout information to page routes
     for (const route of discoveredRoutes) {
       if (route.type === 'page') {
         const pageDir = path.dirname(route.filePath);
-        
-        // Check for layout in the current directory or any parent directory
         let currentDir = pageDir;
         let layoutFile: string | null = null;
         const rootDir = normalizePath(path.join(absoluteAppDir, relativePagesDir));
-        
         while (currentDir.startsWith(rootDir)) {
-          if (layoutsByDir.has(currentDir)) {
-            const layout = layoutsByDir.get(currentDir);
-            if (layout) {
-              layoutFile = layout;
-              break;
-            }
+          if (layouts[currentDir]) {
+            layoutFile = layouts[currentDir];
+            break;
           }
-          
-          // Move up a directory
           currentDir = path.dirname(currentDir);
         }
-        
         if (layoutFile) {
-          // Add layout information to the page route
           (route as PageRouteWithLayout).layout = layoutFile;
-          logger.debug(`Assigned layout ${layoutFile} to page ${route.path}`);
         }
       }
     }
   }
-  
-  // Sort routes: shorter paths first, then by path string
-  discoveredRoutes.sort((a, b) => {
-    if (a.path.length !== b.path.length) {
-      return a.path.length - b.path.length;
+  // --- File Tree ---
+  const fileTree: { apiDir: FileTreeNode; pagesDir: FileTreeNode } = { apiDir: {}, pagesDir: {} };
+  try {
+    fileTree.apiDir = buildFileTree(absoluteApiDir, absoluteAppDir);
+  } catch (e) {
+    errors.push(`Failed to build API file tree: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  if (relativePagesDir) {
+    try {
+      fileTree.pagesDir = buildFileTree(absolutePagesDir, absoluteAppDir);
+    } catch (e) {
+      errors.push(`Failed to build pages file tree: ${e instanceof Error ? e.message : String(e)}`);
     }
-    return a.path.localeCompare(b.path);
-  });
-
-  return discoveredRoutes;
+  }
+  // --- Return diagnostics ---
+  return {
+    apiRoutes: discoveredRoutes.filter(r => r.type === 'api'),
+    pageRoutes: discoveredRoutes.filter(r => r.type === 'page'),
+    layouts,
+    duplicateApiWarnings,
+    duplicatePageWarnings,
+    errors,
+    fileTree
+  };
 } 

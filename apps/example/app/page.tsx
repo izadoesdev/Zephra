@@ -1,16 +1,18 @@
-
 export default function HomePage() {
   return (
-    <div>
-      <h1>Welcome to Zephra</h1>
-      <p>The ultra-fast, minimalist full-stack framework</p>
-      <ul>
-        <li><a href="/about">About</a></li>
-        <li><a href="/api/hello">API: Hello</a></li>
-        <li><a href="/api/items">API: Items</a></li>
-        <li><a href="/api/users/123">API: User 123</a></li>
-        <li><a href="/api/users/123/posts">API: User 123 Posts</a></li>
-      </ul>
+    <div className="relative flex flex-col items-center justify-center min-h-[60vh] w-full">
+      <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/30 via-purple-900/20 to-pink-900/30 blur-2xl opacity-60 -z-10 animate-pulse" />
+      <div className="max-w-xl w-full mx-auto bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-10 border border-white/20">
+        <h1 className="text-5xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-lg tracking-tight">Welcome to Zephra</h1>
+        <p className="mb-8 text-lg text-gray-200 font-medium">The ultra-fast, minimalist full-stack framework</p>
+        <ul className="space-y-3">
+          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/about">About</a></li>
+          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/hello">API: Hello</a></li>
+          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/items">API: Items</a></li>
+          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/users/123">API: User 123</a></li>
+          <li><a className="text-blue-300 hover:text-pink-400 transition-colors duration-200 font-semibold text-lg underline-offset-4 hover:underline" href="/api/users/123/posts">API: User 123 Posts</a></li>
+        </ul>
+      </div>
     </div>
   );
 } 
