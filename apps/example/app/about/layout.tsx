@@ -16,7 +16,7 @@ export default function AboutLayout({ children }: AboutLayoutProps) {
           <li><a href="/about">Overview</a></li>
           <li><a href="/about/team">Team</a></li>
           <li><a href="/about/technology">Technology</a></li>
-        </ul>
+        </ul> 
       </div>
       <div className="about-content">
         {children}

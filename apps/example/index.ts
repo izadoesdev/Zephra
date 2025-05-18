@@ -17,7 +17,7 @@ async function startApp() {
     });
 
     // Start the server
-    app.listen(Number(PORT));
+    Bun.serve({fetch: app.fetch, port: Number(PORT)});
 
     logger.info(`🚀 Zephra web example is running at http://localhost:${PORT}`);
   } catch (err) {

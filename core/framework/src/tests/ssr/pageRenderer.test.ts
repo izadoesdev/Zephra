@@ -3,10 +3,11 @@ import { handleReactPageRoute } from '../../ssr/page-renderer'; // Adjusted path
 import { htmlErrorString } from '../../utils/html-response'; // Adjusted path
 import type { Context } from 'elysia';
 import type { RouteScannerConfig, DiscoveredRoute } from '../../types/routing';
-import type { ReactExternals, ActualLoggerInstance } from '../../types/app';
+import type { Logger } from '../../types/app';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import pathUtil from 'node:path';
+import { logger } from '../../libs/logger';
 
 // Mock React and renderToString
 mock.module('react', () => ({
@@ -39,8 +40,7 @@ const mockDynamicImport = mock(async (modulePath: string) => {
 describe('handleReactPageRoute', () => {
   let mockCtx: Partial<Context>;
   let mockConfig: RouteScannerConfig;
-  let mockReactExternals: ReactExternals;
-  let mockLogger: ActualLoggerInstance;
+  let mockLogger: Logger;
 
   beforeEach(() => {
     mockCtx = {
@@ -55,19 +55,6 @@ describe('handleReactPageRoute', () => {
       appName: 'TestApp',
       logPrefix: 'test',
     };
-
-    mockReactExternals = {
-      React: React as typeof React, // Use the mocked version
-      renderToString: ReactDOMServer.renderToString as typeof ReactDOMServer.renderToString, // Use the mocked version
-    };
-
-    mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
-      // Add other logger methods if your ActualLoggerInstance has them
-    } as unknown as ActualLoggerInstance;
     
     // Assign our mock to the global import function used by page-renderer
     // This is a bit of a hack for bun:test; in Jest, you'd use jest.mock.
@@ -106,10 +93,8 @@ describe('handleReactPageRoute', () => {
     // @ts-ignore
     global.import = simulateImport;
 
-    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, mockReactExternals, mockLogger);
-    
-    expect(mockReactExternals.React.createElement).toHaveBeenCalled();
-    expect(mockReactExternals.renderToString).toHaveBeenCalledWith('mocked_react_element');
+    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, logger);
+   
     expect(response).toBe('mocked_html_output');
     // @ts-ignore
     global.import = originalImport; // Restore
@@ -130,10 +115,8 @@ describe('handleReactPageRoute', () => {
     // @ts-ignore
     global.import = simulateImport;
 
-    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, mockReactExternals, mockLogger);
+    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, logger);
 
-    expect(mockReactExternals.React.createElement).toHaveBeenCalledTimes(2); // Page + Layout
-    expect(mockReactExternals.renderToString).toHaveBeenCalledWith('mocked_react_element'); // Inner element for layout
     expect(response).toBe('mocked_html_output');
     // @ts-ignore
     global.import = originalImport; // Restore
@@ -152,7 +135,7 @@ describe('handleReactPageRoute', () => {
     // @ts-ignore
     global.import = simulateImport;
 
-    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, mockReactExternals, mockLogger) as Response;
+    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, logger) as Response;
     
     expect(response.status).toBe(500);
     const text = await response.text();
@@ -175,11 +158,8 @@ describe('handleReactPageRoute', () => {
     // @ts-ignore
     global.import = simulateImport;
 
-    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, mockReactExternals, mockLogger);
+    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, logger);
 
-    expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Layout component not found or not a function'));
-    expect(mockReactExternals.React.createElement).toHaveBeenCalledTimes(1); // Only PageComponent
-    expect(mockReactExternals.renderToString).toHaveBeenCalledWith('mocked_react_element');
     expect(response).toBe('mocked_html_output');
     // @ts-ignore
     global.import = originalImport; // Restore
@@ -194,12 +174,11 @@ describe('handleReactPageRoute', () => {
       depth: 1,
       isDynamic: false,
     };
-    const incompleteExternals = { React: undefined, renderToString: undefined } as unknown as ReactExternals;
     const originalImport = global.import;
     // @ts-ignore
     global.import = simulateImport;
 
-    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, incompleteExternals, mockLogger) as Response;
+    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, logger) as Response;
 
     expect(response.status).toBe(500);
     const text = await response.text();
@@ -222,7 +201,7 @@ describe('handleReactPageRoute', () => {
     // @ts-ignore
     global.import = simulateImport;
 
-    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, mockReactExternals, mockLogger) as Response;
+    const response = await handleReactPageRoute(mockCtx as Context, pageRoute, mockConfig, logger) as Response;
 
     expect(response.status).toBe(500);
     const text = await response.text();

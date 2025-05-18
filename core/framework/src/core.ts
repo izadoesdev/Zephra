@@ -1,16 +1,22 @@
 import { Elysia, type Context } from 'elysia';
 import { html as elysiaHtmlPlugin } from '@elysiajs/html';
-import { logger, createLogger } from './libs/logger';
+import { logger as baseLogger, createLogger } from './libs/logger';
 import { createRouter } from './routing/router';
 import type { RouteScannerConfig, DiscoveredRoute } from './types/routing';
 import { DEFAULT_CONFIG } from './config/app';
 import type {
-  ActualLoggerInstance,
-  ActualRouterInstance,
+  Logger,
+  Router,
   ZephraAppInstance
 } from './types/app';
 import { handleReactPageRoute } from './ssr/page-renderer';
 import { htmlErrorString } from './utils/html-response';
+import { startHMRServer } from './hmr/hmr-server';
+import { staticPlugin } from '@elysiajs/static';
+
+if (process.env.NODE_ENV !== 'production') {
+  startHMRServer({ watchDir: process.cwd() });
+}
 
 export async function createApp(
   config: Partial<RouteScannerConfig> = {}
@@ -20,39 +26,40 @@ export async function createApp(
     ...config,
   };
 
-  const appLogger: ActualLoggerInstance = mergedConfig.logPrefix
+  const logger: Logger = mergedConfig.logPrefix
     ? createLogger(mergedConfig.logPrefix)
-    : logger;
+    : baseLogger;
 
-  appLogger.info('Initializing Zephra app with React SSR support...');
-  appLogger.debug(`App configuration: ${JSON.stringify(mergedConfig, null, 2)}`);
+  logger.info('Initializing Zephra app with React SSR support...');
+  logger.debug(`App configuration: ${JSON.stringify(mergedConfig, null, 2)}`);
 
   const baseApp = new Elysia({ name: mergedConfig.appName }).decorate(
     'logger',
-    appLogger
+    logger
   );
 
-  const appWithHtml = baseApp.use(elysiaHtmlPlugin());
+  baseApp.use(elysiaHtmlPlugin());
+  baseApp.use(staticPlugin({ assets: '.zephra', prefix: '/' }));
 
-  appWithHtml.get('/health', () => ({ status: 'ok', name: mergedConfig.appName }));
+  baseApp.get('/health', () => ({ status: 'ok', name: mergedConfig.appName }));
 
   // @ts-ignore - Elysia type inference is not working correctly here. // TODO: Fix this.
-  const router: ActualRouterInstance = createRouter(appWithHtml, mergedConfig);
+  const router: ActualRouterInstance = createRouter(baseApp, mergedConfig);
 
   try {
     await router.scanAllRoutes();
     await router.registerApiRoutes();
 
-    const finalApp = appWithHtml.decorate('router', router);
+    baseApp.decorate('router', router);
 
     const pageRoutes: DiscoveredRoute[] = router.getPageRoutes();
 
     if (pageRoutes.length > 0) {
-      appLogger.info(
+      logger.info(
         `Found ${pageRoutes.length} page routes for server-side rendering.`
       );
 
-      finalApp.get('*', async (ctx: Context) => {
+      baseApp.get('*', async (ctx: Context) => {
         const requestPath = new URL(ctx.request.url).pathname;
         const normalizedPath =
           requestPath === '/' ? '/' : requestPath.replace(/\/+$/, '');
@@ -66,11 +73,11 @@ export async function createApp(
             ctx,
             pageRoute,
             mergedConfig,
-            appLogger
+            logger
           );
         }
 
-        appLogger.debug(`No page route found for path: ${normalizedPath}`);
+        logger.debug(`No page route found for path: ${normalizedPath}`);
         ctx.set.status = 404;
         return new Response(
           htmlErrorString(
@@ -82,8 +89,8 @@ export async function createApp(
         );
       });
     } else {
-      finalApp.get('*', (ctx: Context) => {
-        appLogger.warn('No page routes defined. Catch-all returning 404.');
+      baseApp.get('*', (ctx: Context) => {
+        logger.warn('No page routes defined. Catch-all returning 404.');
         ctx.set.status = 404;
         return new Response(
           htmlErrorString(
@@ -96,16 +103,16 @@ export async function createApp(
       });
     }
 
-    appLogger.info(
+    logger.info(
       'Zephra app initialized successfully with React SSR enabled.'
     );
 
     // @ts-ignore - Elysia type inference is not working correctly here. // TODO: Fix this.
-    return finalApp as unknown as ZephraAppInstance;
+    return baseApp as unknown as ZephraAppInstance;
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
-    appLogger.error(`Error initializing Zephra app: ${error.message}`);
-    if (error.stack) appLogger.error(error.stack);
+    logger.error(`Error initializing Zephra app: ${error.message}`);
+    if (error.stack) logger.error(error.stack);
     throw error;
   }
 } 

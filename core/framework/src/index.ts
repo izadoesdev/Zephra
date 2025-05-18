@@ -1,5 +1,6 @@
 // Core framework exports
 export { createApp } from './core';
+export { startHMRServer } from './hmr/hmr-server';
 
 // Logger exports
 export { logger, createLogger } from './libs/logger';
@@ -12,7 +13,7 @@ export type {
   PageComponentType,
   LayoutComponentProps,
   LayoutComponentType,
-  ActualLoggerInstance,
-  ActualRouterInstance,
-  ZephraAppInstance
+  ZephraAppInstance,
+  Logger,
+  Router
 } from './types/app'; 

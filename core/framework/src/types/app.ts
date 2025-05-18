@@ -2,8 +2,8 @@ import type { createLogger } from '../libs/logger';
 import type { createRouter } from '../routing/router';
 import type { Elysia } from 'elysia';
 
-export type ActualLoggerInstance = ReturnType<typeof createLogger>;
-export type ActualRouterInstance = ReturnType<typeof createRouter>;
+export type Logger = ReturnType<typeof createLogger>;
+export type Router = ReturnType<typeof createRouter>;
 
 export type PageComponentType = React.ComponentType<Record<string, unknown>>;
 
