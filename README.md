@@ -10,12 +10,12 @@ Zephra is an ultra-fast, minimalist full-stack framework designed for building m
 |------------|---------------------|----------------------------------|
 | Runtime    | Bun                 | Lightning-fast server runtime    |
 | API        | ElysiaJS            | Typed backend with plugin system |
-| Frontend   | React (via Vite)    | SPA + SSR-ready rendering        |
+| Frontend   | React               | SPA + SSR-ready rendering        |
 | Routing    | File-based (custom) | Unified routing for API/pages    |
 | Styling    | Tailwind CSS (opt.) | Fast UI prototyping              |
 | Validation | Zod                 | End-to-end schema validation     |
-| Bundling   | Vite + Bun          | Optimized builds                 |
-| Tooling    | Bun dev server + CLI| DX-focused                       |
+| Bundling   | Bun (native)        | Optimized builds (SSR + CSR)     |
+| Tooling    | Bun dev server + CLI| DX-focused, in-house             |
 
 ## 🚀 Quick Start (Development)
 
@@ -23,9 +23,11 @@ Zephra is an ultra-fast, minimalist full-stack framework designed for building m
 # Install dependencies
 bun install
 
-# Run the example app
-cd apps/web
-bun dev
+# Run the example app (in a separate terminal for each command)
+cd apps/example
+bun run dev         # Starts the Bun server (with hot reload)
+bun run tailwind:watch  # Runs Tailwind in watch mode
+bun build app/main.tsx --outdir dist/static --target browser --minify --watch  # Bundles client code in real-time
 ```
 
 The example app will start at http://localhost:3000 with the following endpoints:
@@ -77,9 +79,23 @@ app/
 │   └── users/
 │       └── [id].ts   # /api/users/:id (dynamic route)
 │
+├── main.tsx          # Client entry for CSR/hydration
 └── about/           # Page route for /about
     └── page.tsx     # React component
 ```
+
+## ⚡ SSR & CSR
+
+- **SSR:** Bun + React render pages on the server for fast initial load and SEO.
+- **CSR:** Bun's native bundler outputs a browser-ready JS bundle for hydration and interactivity.
+- **Hydration:** SSR output is hydrated on the client for a seamless experience.
+- **HMR:** Currently, HMR is handled via auto-reload (full page reload) using Bun's watcher and injected scripts. True Fast Refresh/stateful HMR is not available without Babel/Webpack.
+
+## 🧪 Diagnostics & Roadmap
+
+- **Diagnostics:** In-house tools for tracking component renders, module graph, and change impact analysis are in progress.
+- **Advanced HMR:** Fast Refresh-style HMR is not available without code transforms. Future plans may include custom Bun plugins or transforms.
+- **Developer Experience:** Focus on type safety, CLI, and in-house DX improvements.
 
 ## 🗺️ Roadmap
 
