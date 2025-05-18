@@ -4,8 +4,10 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"bun --hot index.ts\" \"bunx tailwindcss -i ./app/globals.css -o ./.zephra/tailwind.css --watch\"",
-    "start": "bun index.ts"
+    "dev": "concurrently \"bun --hot index.ts\" \"bun run tailwind:watch\"",
+    "start": "bun index.ts",
+    "build": "bun build app/main.tsx --outdir dist/static --target browser --minify",
+    "tailwind:watch": "bunx tailwindcss -i ./app/globals.css -o ./.zephra/tailwind.css --watch"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.7",
