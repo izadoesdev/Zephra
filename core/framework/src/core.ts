@@ -11,14 +11,23 @@ import type {
 } from './types/app';
 import { handleReactPageRoute } from './ssr/page-renderer';
 import { startHMRServer } from './hmr/hmr-server';
+import { injectHMRScript } from './utils/hmrInjector';
 import { staticPlugin } from '@elysiajs/static';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorPage from './pages/ErrorPage';
 import serverTiming from '@elysiajs/server-timing';
+
+// Initialize HMR server in development
+let hmrServer: any = null;
 if (process.env.NODE_ENV !== 'production') {
-  startHMRServer({ watchDir: process.cwd() });
+  hmrServer = startHMRServer({ 
+    watchDir: process.cwd(),
+    port: 3001,
+    wsPath: '/hmr',
+    clientPath: '/hmr-client.js'
+  });
 }
 
 export async function createApp(
@@ -44,6 +53,38 @@ export async function createApp(
   baseApp.use(elysiaHtmlPlugin());
   baseApp.use(serverTiming());
   baseApp.use(staticPlugin({ prefix: '/public' }));
+
+  // Add HMR client script endpoint in development
+  if (process.env.NODE_ENV !== 'production') {
+    baseApp.get('/hmr-client.js', () => {
+      const { generateHMRClientScript } = require('./hmr/hmr-client');
+      return new Response(
+        generateHMRClientScript('/hmr'), // Use same origin
+        {
+          headers: {
+            'Content-Type': 'application/javascript; charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          }
+        }
+      );
+    });
+
+    // Add WebSocket proxy for HMR
+    baseApp.ws('/hmr', {
+      open: (ws) => {
+        // Forward to HMR server
+        if (hmrServer && hmrServer.wsManager) {
+          hmrServer.wsManager.addClient(ws.raw as unknown as WebSocket);
+        }
+      },
+      close: (ws) => {
+        // Cleanup handled by WebSocketManager
+      },
+      message: (ws, message) => {
+        logger.debug(`HMR WebSocket message: ${message}`);
+      }
+    });
+  }
 
   baseApp.get('/health', () => ({ status: 'ok', name: mergedConfig.appName }));
 

@@ -10,6 +10,7 @@ import { htmlErrorString } from '../utils/html-response'; // Adjusted path
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { scriptManager, injectScripts } from '../libs/scriptManager';
+import { injectHMRScript } from '../utils/hmrInjector';
 import { readFileSync, existsSync } from 'node:fs';
 
 function injectCssIntoHtml(html: string, cssPath: string): string {
@@ -67,6 +68,17 @@ export async function handleReactPageRoute(
     }
     // Inject all scripts from scriptManager and any additional scripts
     htmlOutput = injectScripts(htmlOutput, [...scriptManager.getAll(), ...scripts]);
+    
+    // Inject HMR client script in development mode
+    if (process.env.NODE_ENV !== 'production') {
+      htmlOutput = injectHMRScript(htmlOutput, {
+        enabled: true,
+        clientPath: '/hmr-client.js',
+        // Don't specify port - use same origin
+        wsPath: '/hmr'
+      });
+    }
+    
     return htmlOutput;
   } catch (e: unknown) {
     const error = e instanceof Error ? e : new Error(String(e));

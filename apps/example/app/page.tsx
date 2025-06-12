@@ -1,4 +1,13 @@
+import { useState } from 'react';
+
 export default function HomePage() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    console.log('handleClick', count);
+    setCount(count + 1);
+  }
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[60vh] w-full">
       <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/30 via-purple-900/20 to-pink-900/30 blur-2xl opacity-60 -z-10 animate-pulse" />
@@ -14,6 +23,11 @@ export default function HomePage() {
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/users/123/posts">API: User 123 Posts</a></li>
           <li><a className="block px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" href="/api/posts">API: Posts CRUD</a></li>
         </ul>
+        <h2 className="text-2xl font-semibold mb-2 text-pink-300">React Fast Refresh</h2>
+        <p className="mb-6 text-lg text-gray-200 font-medium">
+          React Fast Refresh is a feature that allows you to update your React components without reloading the page.
+        </p>
+        <button className="px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold shadow hover:scale-105 transition-transform" onClick={handleClick}>Click me {count}</button>
       </div>
     </div>
   );
