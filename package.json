@@ -29,6 +29,7 @@
     "@tailwindcss/cli": "^4.1.7",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.0",
+    "bun": "^1.2.16",
     "commander": "^13.1.0",
     "picocolors": "^1.1.1",
     "pino": "^9.6.0",

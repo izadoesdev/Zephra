@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { HMRUpdateStrategyImpl } from '../libs/hmrStrategy';
-import { ModuleRegistryManager } from '../libs/moduleRegistry';
+import { HMRUpdateStrategyImpl } from '../../libs/hmrStrategy';
+import { ModuleRegistryManager } from '../../libs/moduleRegistry';
 
 describe('Smart HMR System', () => {
   describe('HMRUpdateStrategy', () => {

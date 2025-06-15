@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { HashService } from '../libs/hashService';
-import { WebSocketManager } from '../libs/wsManager';
-import { injectHMRScript } from '../utils/hmrInjector';
-import { generateHMRClientScript } from '../hmr/hmr-client';
+import { HashService } from '../../libs/hashService';
+import { WebSocketManager } from '../../libs/wsManager';
+import { injectHMRScript } from '../../utils/hmrInjector';
+import { generateHMRClientScript } from '../../hmr/hmr-client';
 
 describe('HMR System', () => {
   describe('HashService', () => {

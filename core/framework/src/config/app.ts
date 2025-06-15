@@ -6,4 +6,4 @@ export const DEFAULT_CONFIG: RouteScannerConfig = {
   pagesDir: 'app',
   appName: 'ZephraApp',
   logPrefix: 'app'
-}; 
+};

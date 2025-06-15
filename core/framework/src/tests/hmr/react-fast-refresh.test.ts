@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { ReactComponentAnalyzer } from '../libs/reactAnalyzer';
+import { ReactComponentAnalyzer } from '../../libs/reactAnalyzer';
 
 describe('React Fast Refresh', () => {
   describe('ReactComponentAnalyzer', () => {
